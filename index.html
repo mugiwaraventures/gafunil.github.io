@@ -204,15 +204,32 @@
       </div>
     </div>
 
-    <!-- Perda por Etapa do Funil -->
-    <div class="bg-white p-4 rounded-lg shadow mb-6">
-      <h2 class="text-lg font-semibold mb-4">Perda por Etapa do Funil</h2>
-      <ul class="space-y-2">
-        <li><strong>Cliques → Landing:</strong> <span id="lossClicksLandingCount">0</span> (<span id="lossClicksLandingPct">0%</span>)</li>
-        <li><strong>Landing → IC:</strong> <span id="lossLandingICCount">0</span> (<span id="lossLandingICPct">0%</span>)</li>
-        <li><strong>IC → Venda:</strong> <span id="lossICApprovedCount">0</span> (<span id="lossICApprovedPct">0%</span>)</li>
-      </ul>
-    </div>
+  <!-- Taxa de Passagem por Etapa do Funil -->
+<div class="bg-white p-4 rounded-lg shadow mb-6">
+  <h2 class="text-lg font-semibold mb-4">Taxa de Passagem por Etapa do Funil</h2>
+  <ul class="space-y-2">
+    <li>
+      <strong>Cliques → Pre-LP:</strong>
+      <span id="passClicksPreLpCount">0</span>
+      (<span id="passClicksPreLpPct">0%</span>)
+    </li>
+    <li>
+      <strong>Pre-LP → Landing:</strong>
+      <span id="passPreLpLandingCount">0</span>
+      (<span id="passPreLpLandingPct">0%</span>)
+    </li>
+    <li>
+      <strong>Landing → IC:</strong>
+      <span id="passLandingICCount">0</span>
+      (<span id="passLandingICPct">0%</span>)
+    </li>
+    <li>
+      <strong>IC → Venda:</strong>
+      <span id="passICApprovedCount">0</span>
+      (<span id="passICApprovedPct">0%</span>)
+    </li>
+  </ul>
+</div>
 
     <!-- Conversão Pós-Venda -->
     <div class="bg-white p-4 rounded-lg shadow mb-6">
@@ -303,13 +320,29 @@
       document.getElementById('emailRevenueCard').textContent     = formatCurrency(m.revenueByProduct.find(p=>p.name.toLowerCase().startsWith('email'))?.value||0);
       document.getElementById('epcCard').textContent              = trafficMetrics.clicks? formatCurrency(m.netRevenue/trafficMetrics.clicks):formatCurrency(0);
       // Funil
-      const {clicks,landing,ic,approved}=m.funnel;
-      document.getElementById('lossClicksLandingCount').textContent = clicks-landing;
-      document.getElementById('lossClicksLandingPct').textContent   = formatPct((clicks-landing)/clicks*100);
-      document.getElementById('lossLandingICCount').textContent    = landing-ic;
-      document.getElementById('lossLandingICPct').textContent      = formatPct((landing-ic)/landing*100);
-      document.getElementById('lossICApprovedCount').textContent   = ic-approved;
-      document.getElementById('lossICApprovedPct').textContent     = formatPct((ic-approved)/ic*100);
+  // ► Taxa de Passagem por Etapa do Funil
+  const clicks      = trafficMetrics.clicks;
+  const preLpViews  = trafficMetrics.preLpViews;
+  const preLpClicks = trafficMetrics.preLpClicks;
+  const ic          = trafficMetrics.ic;
+  const approved    = m.funnel.approved;
+
+  // 1) Cliques → Pre-LP
+  document.getElementById('passClicksPreLpCount').textContent = preLpViews;
+  document.getElementById('passClicksPreLpPct').textContent   = formatPct(preLpViews / clicks * 100);
+
+  // 2) Pre-LP → Landing
+  document.getElementById('passPreLpLandingCount').textContent = preLpClicks;
+  document.getElementById('passPreLpLandingPct').textContent   = formatPct(preLpClicks / preLpViews * 100);
+
+  // 3) Landing → IC
+  document.getElementById('passLandingICCount').textContent    = ic;
+  document.getElementById('passLandingICPct').textContent      = formatPct(ic / preLpClicks * 100);
+
+  // 4) IC → Venda
+  document.getElementById('passICApprovedCount').textContent   = approved;
+  document.getElementById('passICApprovedPct').textContent     = formatPct(approved / ic * 100);
+
       // Pós-venda
       document.getElementById('postSaleConversion').innerHTML      =
         m.postSale.map(u=>`<tr><td>${u.upsell}</td><td class="text-right">${formatPct(u.percentage)}</td></tr>`).join('');
