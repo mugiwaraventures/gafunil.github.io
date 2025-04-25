@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Funil de Vendas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chrono-node/1.3.11/chrono.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Dashboard Funil de Vendas</h1>
+
+    <!-- ► Inputs de Métricas de Tráfego -->
+    <div class="bg-white p-4 rounded-lg shadow grid grid-cols-1 sm:grid-cols-6 gap-4 mb-4">
+      <div><label class="block text-sm font-medium">Clicks</label><input id="metricClicks" type="number" value="21736" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">Pre-LP Views</label><input id="metricPreLpViews" type="number" value="15000" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">Pre-LP Clicks</label><input id="metricPreLpClicks" type="number" value="7384" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">CPC (R$)</label><input id="metricCpc" type="number" step="0.01" value="2.33" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">IC (Initiate Checkout)</label><input id="metricIc" type="number" value="3346" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">Cost (R$)</label><input id="metricCost" type="number" step="0.01" value="50707.74" class="mt-1 p-2 border rounded w-full"/></div>
+    </div>
+    <button id="updateTraffic" type="button" class="mb-6 px-4 py-2 bg-blue-600 text-white rounded shadow">
+      Atualizar Tráfego
+    </button>
+
+    <!-- ► Inputs de Métricas de Vídeo -->
+    <div class="bg-white p-4 rounded-lg shadow grid grid-cols-1 sm:grid-cols-5 gap-4 mb-4">
+      <div><label class="block text-sm font-medium">Plays Únicos</label><input id="metricVideoPlays" type="number" value="0" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">Visualizações Únicas</label><input id="metricVideoViews" type="number" value="0" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">Play Rate (%)</label><input id="metricVideoPlayRate" type="number" step="0.01" value="0" class="mt-1 p-2 border rounded w-full"/></div>
+      <div><label class="block text-sm font-medium">Retenção Pitch (%)</label><input id="metricVideoRetentionPitch" type="number" step="0.01" value="0" class="mt-1 p-2 border rounded w/full"/></div>
+      <div><label class="block text-sm font-medium">Retenção Lead (%)</label><input id="metricVideoRetentionLead" type="number" step="0.01" value="0" class="mt-1 p-2 border rounded w-full"/></div>
+    </div>
+    <button id="updateVideoMetrics" type="button" class="mb-6 px-4 py-2 bg-green-600 text-white rounded shadow">
+      Atualizar Vídeo
+    </button>
+
+    <!-- ► Upload CSV de Vendas -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+      <label class="block text-sm font-medium">Importar CSV de Vendas</label>
+      <div class="flex space-x-2 mt-2">
+        <input id="csvFileInput" type="file" accept=".csv" class="p-2 border rounded flex-1"/>
+        <button id="loadCsvButton" type="button" class="px-4 py-2 bg-blue-600 text-white rounded shadow">
+          Carregar CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- ► Cards de Métricas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <!-- Faturamento Líquido -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Faturamento Líquido</h2>
+        <p id="netRevenue" class="text-2xl font-bold text-green-600">R$ 0,00</p>
+      </div>
+      <!-- Lucro -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Lucro</h2>
+        <p id="profit" class="text-2xl font-bold text-green-600">R$ 0,00</p>
+      </div>
+      <!-- CPA -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">CPA</h2>
+        <p id="cpa" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+      </div>
+      <!-- CPC -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">CPC</h2>
+        <p id="cpcCard" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+      </div>
+      <!-- Clicks -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Clicks</h2>
+        <p id="clicksCard" class="text-2xl font-bold text-blue-600">0</p>
+      </div>
+      <!-- Pre-LP Views -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Pre-LP Views</h2>
+        <p id="preLpViewsCard" class="text-2xl font-bold text-blue-600">0</p>
+      </div>
+      <!-- Pre-LP Clicks -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Pre-LP Clicks</h2>
+        <p id="preLpClicksCard" class="text-2xl font-bold text-blue-600">0</p>
+      </div>
+      <!-- Cost -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Cost (R$)</h2>
+        <p id="cost" class="text-2xl font-bold text-red-600">R$ 0,00</p>
+      </div>
+      <!-- Custo por IC -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Custo por IC</h2>
+        <p id="cic" class="text-2xl font-bold text-orange-600">R$ 0,00</p>
+      </div>
+      <!-- ROI -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">ROI</h2>
+        <p id="roi" class="text-2xl font-bold text-purple-600">0%</p>
+      </div>
+      <!-- ARPU -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">ARPU</h2>
+        <p id="arpu" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+      </div>
+      <!-- Conversões Totais -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Conversões Totais</h2>
+        <p id="totalConversionsCard" class="text-2xl font-bold text-indigo-600">0</p>
+      </div>
+      <!-- Vendas de Email -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Vendas de Email</h2>
+        <p id="emailSalesCount" class="text-2xl font-bold text-indigo-600">0</p>
+      </div>
+      <!-- Receita Email -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Receita Email</h2>
+        <p id="emailRevenueCard" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+      </div>
+      <!-- EPC -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">EPC</h2>
+        <p id="epcCard" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+      </div>
+      <!-- Vídeo: Plays Únicos -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Plays Únicos</h2>
+        <p id="videoPlaysCard" class="text-2xl font-bold text-blue-600">0</p>
+      </div>
+      <!-- Vídeo: Visualizações Únicas -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Visualizações Únicas</h2>
+        <p id="videoViewsCard" class="text-2xl font-bold text-blue-600">0</p>
+      </div>
+      <!-- Vídeo: Play Rate -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Play Rate</h2>
+        <p id="videoPlayRateCard" class="text-2xl font-bold text-blue-600">0%</p>
+      </div>
+      <!-- Vídeo: Retenção Pitch -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Retenção Pitch</h2>
+        <p id="videoRetentionPitchCard" class="text-2xl font-bold text-blue-600">0%</p>
+      </div>
+      <!-- Vídeo: Retenção Lead -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">Retenção Lead</h2>
+        <p id="videoRetentionLeadCard" class="text-2xl font-bold text-blue-600">0%</p>
+      </div>
+    </div>
+
+    <!-- ► Tabelas e Gráficos de Vendas -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <!-- Vendas por Origem SRC -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold mb-2">Vendas por Origem SRC</h2>
+        <table class="w-full text-sm">
+          <thead><tr><th class="text-left">Origem</th><th class="text-right">Qtd</th><th class="text-right">%Front</th></tr></thead>
+          <tbody id="salesBySrc"></tbody>
+        </table>
+      </div>
+  <!-- Vendas por Grupo -->
+  <div class="bg-white p-4 rounded-lg shadow">
+    <h2 class="text-lg font-semibold mb-2">Vendas por Grupo</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr>
+          <th class="text-left">Grupo</th>
+          <th class="text-right">Qtd</th>
+          <th class="text-right">%Front</th>
+        </tr>
+      </thead>
+      <tbody id="salesByGroup"></tbody>
+    </table>
+  </div>
+
+      <!-- Faturamento por Produto -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold mb-2">Faturamento por Produto</h2>
+        <table class="w-full text-sm">
+          <thead><tr><th class="text-left">Produto</th><th class="text-right">Valor</th><th class="text-right">%Front</th></tr></thead>
+          <tbody id="revenueByProduct"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <!-- Vendas por Dia da Semana -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold mb-2">Vendas por Dia da Semana</h2>
+        <canvas id="salesByDayChart"></canvas>
+      </div>
+      <!-- Vendas por País -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold mb-2">Vendas por País</h2>
+        <table class="w-full text-sm">
+          <thead><tr><th class="text-left">País</th><th class="text-right">Qtd</th><th class="text-right">%Total</th></tr></thead>
+          <tbody id="salesByCountry"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Perda por Etapa do Funil -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+      <h2 class="text-lg font-semibold mb-4">Perda por Etapa do Funil</h2>
+      <ul class="space-y-2">
+        <li><strong>Cliques → Landing:</strong> <span id="lossClicksLandingCount">0</span> (<span id="lossClicksLandingPct">0%</span>)</li>
+        <li><strong>Landing → IC:</strong> <span id="lossLandingICCount">0</span> (<span id="lossLandingICPct">0%</span>)</li>
+        <li><strong>IC → Venda:</strong> <span id="lossICApprovedCount">0</span> (<span id="lossICApprovedPct">0%</span>)</li>
+      </ul>
+    </div>
+
+    <!-- Conversão Pós-Venda -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+      <h2 class="text-lg font-semibold mb-2">Conversão Pós-Venda</h2>
+      <table class="w-full text-sm">
+        <thead><tr><th class="text-left">Upsell</th><th class="text-right">%Conversão</th></tr></thead>
+        <tbody id="postSaleConversion"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ► Métricas iniciais
+    const trafficMetrics = { clicks:21736, preLpViews:15000, preLpClicks:7384, cpc:2.33, ic:3346, cost:50707.74 };
+    const videoMetrics   = { uniquePlays:0, uniqueViews:0, playRate:0, retentionPitch:0, retentionLead:0 };
+    let salesData = [], filteredData = [];
+
+    // ► Formatação
+    const formatCurrency = v => `R$ ${v.toFixed(2)}`;
+    const formatPct      = v => `${v.toFixed(2)}%`;
+
+    // ► Atualiza cards de tráfego
+    function updateTrafficCards(){
+      document.getElementById('clicksCard').textContent      = trafficMetrics.clicks;
+      document.getElementById('preLpViewsCard').textContent  = trafficMetrics.preLpViews;
+      document.getElementById('preLpClicksCard').textContent = trafficMetrics.preLpClicks;
+      document.getElementById('cpcCard').textContent         = formatCurrency(trafficMetrics.cpc);
+      document.getElementById('cost').textContent            = formatCurrency(trafficMetrics.cost);
+      document.getElementById('cic').textContent             = formatCurrency( trafficMetrics.cost / (trafficMetrics.ic||1) );
+    }
+    // ► Atualiza cards de vídeo
+    function updateVideoCards(){
+      document.getElementById('videoPlaysCard').textContent          = videoMetrics.uniquePlays;
+      document.getElementById('videoViewsCard').textContent          = videoMetrics.uniqueViews;
+      document.getElementById('videoPlayRateCard').textContent       = formatPct(videoMetrics.playRate);
+      document.getElementById('videoRetentionPitchCard').textContent = formatPct(videoMetrics.retentionPitch);
+      document.getElementById('videoRetentionLeadCard').textContent  = formatPct(videoMetrics.retentionLead);
+    }
+
+    // ► Cálculo de métricas de vendas
+      function calculateMetrics(data){
+      const front = data.filter(r=>
+        (r.Grupo||'').toString().trim().toUpperCase() === 'FRONT'
+      );
+      const totalFront = front.length;
+      const net = data.reduce((s,r)=>s+(r.Comissão||0),0), cost=trafficMetrics.cost;
+      const profit=net-cost, cpa=totalFront?cost/totalFront:0, roi=cost?((net-cost)/cost)*100:0;
+      const arpu=totalFront?net/totalFront:0;
+      const countBy=(arr,k)=>arr.reduce((a,r)=>{let v=r[k]||'Desconhecido';a[v]=(a[v]||0)+1;return a;},{});
+      const sumBy  =(arr,k,val)=>arr.reduce((a,r)=>{let v=r[k]||'Desconhecido';a[v]=(a[v]||0)+(r[val]||0);return a;},{});
+      const build  =(obj,total,isVal)=>Object.entries(obj).map(([k,v])=>({name:k,quantity: isVal?undefined:v,value: isVal?v:undefined,percentage: total? v/total*100:0}))
+                                                        .sort((a,b)=> (isVal? b.value-a.value:b.quantity-a.quantity));
+      const salesBySrc     = build(countBy(front,'src'),totalFront,false);
+      const salesByProduct = build(countBy(front,'Nome do Plano'),totalFront,false);
+      const groupCounts = countBy(data, 'Grupo');
+      const salesByGroup = build(groupCounts, totalFront, false);
+      const revenueByProduct=build(sumBy(data,'Nome do Plano','Comissão'),front.reduce((s,r)=>s+(r.Comissão||0),0),true);
+      const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      const salesByDay=days.map(d=>{const q=countBy(front,'Data finalizada')[d]||0;return{day:d,quantity:q,percentage:totalFront?q/totalFront*100:0};});
+      const salesByCountry=build(countBy(front,'País'),totalFront,false);
+      const funnel={clicks:trafficMetrics.clicks,landing:trafficMetrics.preLpClicks,ic:trafficMetrics.ic,approved:totalFront};
+      const upsellGroups = ['OB1','OB2','UP1','UP2','UP3'];
+      const postSale = upsellGroups.map(code => {
+      const cnt = data.filter(r =>
+        (r.Grupo||'').toString().trim().toUpperCase() === code
+      ).length;
+      return {
+        upsell: code,
+        percentage: totalFront ? (cnt / totalFront) * 100 : 0
+      };
+    });
+      return {netRevenue:net, profit, cpa, cost, roi, arpu, totalSales:data.length,
+              salesBySrc,salesByProduct,revenueByProduct,salesByGroup,salesByDay,salesByCountry,funnel,postSale};
+    }
+
+    // ► Atualiza valores de vendas nos cards
+    function updateMetrics(m){
+      document.getElementById('netRevenue').textContent           = formatCurrency(m.netRevenue);
+      document.getElementById('profit').textContent               = formatCurrency(m.profit);
+      document.getElementById('cpa').textContent                  = formatCurrency(m.cpa);
+      document.getElementById('cost').textContent                 = formatCurrency(m.cost);
+      document.getElementById('cic').textContent                  = formatCurrency(m.cost/(trafficMetrics.ic||1));
+      document.getElementById('roi').textContent                  = formatPct(m.roi);
+      document.getElementById('arpu').textContent                 = formatCurrency(m.arpu);
+      document.getElementById('totalConversionsCard').textContent = m.totalSales;
+      document.getElementById('emailSalesCount').textContent      = m.salesBySrc.filter(i=>i.name.toLowerCase().startsWith('email')).reduce((s,i)=>s+i.quantity,0);
+      document.getElementById('emailRevenueCard').textContent     = formatCurrency(m.revenueByProduct.find(p=>p.name.toLowerCase().startsWith('email'))?.value||0);
+      document.getElementById('epcCard').textContent              = trafficMetrics.clicks? formatCurrency(m.netRevenue/trafficMetrics.clicks):formatCurrency(0);
+      // Funil
+      const {clicks,landing,ic,approved}=m.funnel;
+      document.getElementById('lossClicksLandingCount').textContent = clicks-landing;
+      document.getElementById('lossClicksLandingPct').textContent   = formatPct((clicks-landing)/clicks*100);
+      document.getElementById('lossLandingICCount').textContent    = landing-ic;
+      document.getElementById('lossLandingICPct').textContent      = formatPct((landing-ic)/landing*100);
+      document.getElementById('lossICApprovedCount').textContent   = ic-approved;
+      document.getElementById('lossICApprovedPct').textContent     = formatPct((ic-approved)/ic*100);
+      // Pós-venda
+      document.getElementById('postSaleConversion').innerHTML      =
+        m.postSale.map(u=>`<tr><td>${u.upsell}</td><td class="text-right">${formatPct(u.percentage)}</td></tr>`).join('');
+    }
+
+    // ► Preenche tabelas de vendas
+    function updateTables(m){
+      // Vendas por Origem
+      document.getElementById('salesBySrc').innerHTML = 
+        m.salesBySrc.map(i=>
+          `<tr>
+             <td>${i.name}</td>
+             <td class="text-right">${i.quantity}</td>
+             <td class="text-right">${formatPct(i.percentage)}</td>
+           </tr>`
+        ).join('');
+
+      // (Opcional) Tabela antiga de "Produto" — se você não a usa mais, pode manter comentada
+      const elProd = document.getElementById('salesByProduct');
+      if (elProd) {
+        elProd.innerHTML = 
+          m.salesByProduct.map(i=>
+            `<tr>
+               <td>${i.name}</td>
+               <td class="text-right">${i.quantity}</td>
+               <td class="text-right">${formatPct(i.percentage)}</td>
+             </tr>`
+          ).join('');
+      }
+
+      // Faturamento por Produto
+      document.getElementById('revenueByProduct').innerHTML =
+        m.revenueByProduct.map(i=>
+          `<tr>
+             <td>${i.name}</td>
+             <td class="text-right">${formatCurrency(i.value)}</td>
+             <td class="text-right">${formatPct(i.percentage)}</td>
+           </tr>`
+        ).join('');
+
+      // Vendas por País
+      document.getElementById('salesByCountry').innerHTML =
+        m.salesByCountry.map(i=>
+          `<tr>
+             <td>${i.name}</td>
+             <td class="text-right">${i.quantity}</td>
+             <td class="text-right">${formatPct(i.percentage)}</td>
+           </tr>`
+        ).join('');
+    }
+
+
+    // ► Charts
+    function renderSalesByDayChart(m){
+      const ctx=document.getElementById('salesByDayChart').getContext('2d');
+      if(window.salesByDayChart) window.salesByDayChart.destroy();
+      window.salesByDayChart=new Chart(ctx,{type:'bar',data:{labels:m.salesByDay.map(i=>i.day),datasets:[{label:'Vendas',data:m.salesByDay.map(i=>i.quantity)}]},options:{scales:{y:{beginAtZero:true}}}});
+    }
+    function renderFunnelChart(m){
+      const {clicks,landing,ic,approved}=m.funnel;
+      const ctx=document.getElementById('funnelChart')?.getContext('2d');
+      if(!ctx) return;
+      if(window.funnelChart) window.funnelChart.destroy();
+      window.funnelChart=new Chart(ctx,{type:'bar',data:{labels:['Cliques','Landing','IC','Aprovadas'],datasets:[{data:[clicks,landing,ic,approved]}]},options:{indexAxis:'y',scales:{x:{beginAtZero:true}}}});
+    }
+
+// ► VENDAS POR GRUPO FICARIA AQUI
+function updateSalesByGroup(data) {
+  const m = calculateMetrics(data);
+  document.getElementById('salesByGroup').innerHTML =
+    m.salesByGroup.map(i =>
+      `<tr>
+         <td>${i.name}</td>
+         <td class="text-right">${i.quantity}</td>
+         <td class="text-right">${formatPct(i.percentage)}</td>
+       </tr>`
+    ).join('');
+}
+
+
+    // ► Aplica filtros e atualiza tudo
+    function applyFilters() {
+      filteredData = salesData;
+      const m = calculateMetrics(filteredData);
+      updateTrafficCards();
+      updateVideoCards();
+      updateMetrics(m);
+      updateTables(m);
+      updateSalesByGroup(filteredData);
+      renderSalesByDayChart(m);
+      renderFunnelChart(m);
+      
+    }
+
+
+    // ► Eventos
+    document.getElementById('updateTraffic').addEventListener('click', () => {
+      trafficMetrics.clicks      = +document.getElementById('metricClicks').value      || 0;
+      trafficMetrics.preLpViews  = +document.getElementById('metricPreLpViews').value  || 0;
+      trafficMetrics.preLpClicks = +document.getElementById('metricPreLpClicks').value || 0;
+      trafficMetrics.cpc         = +document.getElementById('metricCpc').value         || 0;
+      trafficMetrics.ic          = +document.getElementById('metricIc').value          || 0;
+      trafficMetrics.cost        = +document.getElementById('metricCost').value        || 0;
+      applyFilters();
+    });
+    document.getElementById('updateVideoMetrics').addEventListener('click', () => {
+      videoMetrics.uniquePlays    = +document.getElementById('metricVideoPlays').value        || 0;
+      videoMetrics.uniqueViews    = +document.getElementById('metricVideoViews').value        || 0;
+      videoMetrics.playRate       = +document.getElementById('metricVideoPlayRate').value    || 0;
+      videoMetrics.retentionPitch = +document.getElementById('metricVideoRetentionPitch').value|| 0;
+      videoMetrics.retentionLead  = +document.getElementById('metricVideoRetentionLead').value || 0;
+      applyFilters();
+    });
+
+    // ► Upload CSV de Vendas (ajustado para sales_history_clean_with_group.csv)
+const csvInput = document.getElementById('csvFileInput');
+document.getElementById('loadCsvButton').addEventListener('click', () => {
+  if (!csvInput.files.length) {
+    return alert('Selecione um arquivo CSV antes de carregar.');
+  }
+  Papa.parse(csvInput.files[0], {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: header => {
+          const h = header.trim().toLowerCase();
+          switch (h) {
+            case 'nome do produto': return 'Nome do Plano';
+            case 'grupo':           return 'Grupo';
+            case 'país':            return 'País';
+            case 'src':             return 'src';
+            case 'data da venda':   return 'Data finalizada';
+            case 'valor que você recebeu convertido': return 'Comissão';
+            default:                return header.trim();
+          }
+        },
+        transform: (value, header) => {
+          const v = value.trim().replace(/^"|"$/g, '');
+          if (header === 'Comissão') return parseFloat(v)||0;
+          if (header === 'Data finalizada') return chrono.parseDate(v);
+          return v;
+        },
+        complete: ({ data }) => {
+          salesData = data;
+          applyFilters();
+          alert('CSV carregado e vendas aplicadas!');
+        },
+        error: err => alert('Falha ao carregar CSV: ' + err.message)
+      });
+    });
+
+    // ► Inicialização
+    applyFilters();
+  });
+  </script>
+</body>
+</html>
